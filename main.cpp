@@ -78,8 +78,8 @@ enum {
 
 // SX1272 - Raspberry connections
 int ssPin = 6;
-int dio0  = 5;
-int RST   = 6;
+int dio0  = 7;
+int RST   = 0;
 
 #define DEFAULTSERVER "croft.thethings.girovito.nl"
 #define DEFAULTPORT   1700   //The port on which to send data
@@ -288,7 +288,7 @@ boolean receivePkt(char *payload)
 
 void SetupLoRa()
 {
-    
+
     digitalWrite(RST, HIGH);
     delay(100);
     digitalWrite(RST, LOW);
@@ -438,7 +438,7 @@ void receivepacket() {
                 // Divide by 4
                 SNR = ( value & 0xFF ) >> 2;
             }
-            
+
             if (sx1272) {
                 rssicorr = 139;
             } else {
@@ -678,10 +678,51 @@ void parseCommandline(int argc, char *argv[])
 			error <<  "Hz is outside of any valid ISM band.";
 			die(error.str().c_str());
 		}
-	    }
+		}
+		else if( 0 == strncasecmp(argv[i], "-e", 2))
+		{
+			std::string email_address = argv[i]+2;
+			strncpy(email, email_address.c_str(), 40);
+		}
+        else if ( 0 == strncasecmp(argv[i], "-lat", 4))
+        {
+            std::string latitude = argv[i]+4;
+            lat = ::atof(latitude.c_str());
+            std::cout << "Latitude: " << lat << std::endl;
+        }
+        else if ( 0 == strncasecmp(argv[i], "-lon", 4))
+        {
+            std::string longitude = argv[i]+4;
+            lon = ::atof(longitude.c_str());
+            std::cout << "Longitude: " << lon << std::endl;
+        }
+        else if ( 0 == strncasecmp(argv[i], "-alt", 4))
+        {
+            std::string altitude = argv[i]+4;
+            alt = ::atoi(altitude.c_str());
+            std::cout << "Altitude: " << alt << std::endl;
+        }
+        else if ( 0 == strncasecmp(argv[i], "-ss", 3))
+        {
+            std::string ss = argv[i]+3;
+            ssPin = ::atoi(ss.c_str());
+            std::cout << "SS Pin: " << ssPin << std::endl;
+        }
+        else if ( 0 == strncasecmp(argv[i], "-dio", 4))
+        {
+            std::string dio = argv[i]+4;
+            dio0 = ::atoi(dio.c_str());
+            std::cout << "DIO0 Pin: " << dio0 << std::endl;
+        }
+        else if ( 0 == strncasecmp(argv[i], "-rst", 4))
+        {
+            std::string rst = argv[i]+4;
+            RST = ::atoi(rst.c_str());
+            std::cout << "RST Pin: " << RST << std::endl;
+        }
 	    else
 	    {
-			std::cout << "Usage: " << argv[0] << " [-uSERVERNAMEORIP[:PORT]] [-sf(7-12)] [-fFREQUENCYHZ]" << std::endl;
+			std::cout << "Usage: " << argv[0] << " [-uSERVERNAMEORIP[:PORT]] [-sf(7-12)] [-fFREQUENCYHZ] [-eEMAIL] [-latCOORD] [-lonCOORD] [-altALTITUDEMETERS] [-dioPIN] [-rstPIN] [-ssPIN]" << std::endl;
 			std::cout << "   Example: " << argv[0] << " -ucroft.thethings.girovito.nl" << std::endl;
 			std::cout << "   Example: " << argv[0] << " -ucroft.thethings.girovito.nl:1700" << std::endl;
 			std::cout << "   Example: " << argv[0] << " -u192.168.0.111 -sf8 -f868100000" << std::endl;
@@ -694,7 +735,16 @@ void parseCommandline(int argc, char *argv[])
 			std::cout << "     868100000Hz, 868300000Hz, 868500000Hz," << std::endl;
 			std::cout << "     868850000Hz, 869050000Hz, 869525000Hz," << std::endl;
 			std::cout << "     864100000Hz, 864300000Hz, 864500000Hz"  << std::endl;
-			std::cout << "   The 900MHz Range (902-928MHz) is currently not validated." << std::endl << std::endl;
+			std::cout << "   The 900MHz Range (902-928MHz) is currently not validated." << std::endl;
+            std::cout << "   An email address can be supplied with -e (default is empty): " << std::endl;
+            std::cout << "   Example: -ebla@foo.com" << std::endl;
+            std::cout << "   Coordinates can be passed via -lat (default is 0.0), -lon (default is 0.0) and -alt (default is 0): " << std::endl;
+            std::cout << "   Example: -lat33.0 -lon-100.0 -alt10" << std::endl;
+            std::cout << "   Pin mapping can be passed via" << std::endl;
+            std::cout << "     -dio (default: " << dio0 <<")" << std::endl;
+            std::cout << "     -ss (default: " << ssPin <<")" << std::endl;
+            std::cout << "     -rst (default: " << RST <<")" << std::endl;
+            std::cout << std::endl;
 
 			std::stringstream error;
 			error  << "Unknown command line parameter: ";
@@ -732,7 +782,6 @@ int main(int argc, char *argv[] ) {
     pinMode(dio0, INPUT);
     pinMode(RST, OUTPUT);
 
-    //int fd = 
     if(wiringPiSPISetup(CHANNEL, 500000) < 0)
 		fprintf (stderr, "SPI Setup failed: %s\n", strerror (errno));
     //cout << "Init result: " << fd << endl;
@@ -789,4 +838,3 @@ int main(int argc, char *argv[] ) {
     return (0);
 
 }
-
